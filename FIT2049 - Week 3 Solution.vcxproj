@@ -73,6 +73,7 @@
     <ClCompile Include="Collisions.cpp" />
     <ClCompile Include="Direct3D.cpp" />
     <ClCompile Include="EnemyKart.cpp" />
+    <ClCompile Include="FirstPersonCamera.cpp" />
     <ClCompile Include="FlyingCamera.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObject.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="DirectXTK\SpriteFont.h" />
     <ClInclude Include="DirectXTK\WICTextureLoader.h" />
     <ClInclude Include="EnemyKart.h" />
+    <ClInclude Include="FirstPersonCamera.h" />
     <ClInclude Include="FlyingCamera.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObject.h" />

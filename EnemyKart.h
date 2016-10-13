@@ -20,8 +20,8 @@ private:
 	const int WORLD_WIDTH = 299;
 	const int WORLD_DEPTH = 299;
 
-	Vector3 m_targetPosition;
-	Vector3 GetRandomPosition();
+	//Vector3 m_targetPosition;
+	//Vector3 GetRandomPosition();
 
 	boolean m_targetIsItemBox;	// Checks whether the current target is an item box
 	boolean m_chasingPlayer;	// Determine if we are chasing the player or not

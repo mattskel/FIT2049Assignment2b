@@ -16,6 +16,9 @@
 #include "StateMachine.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "ThirdPersonCamera.h"
+#include "FirstPersonCamera.h"
+#include "SurveillanceCamera.h"
 #include "Button.h"
 #include "Shader.h"
 #include "DirectXTK/SpriteBatch.h"
@@ -53,9 +56,15 @@ private:
 	StateMachine<GameStates, Game>* m_stateMachine;
 
 	Direct3D* m_renderer;
-	Camera* m_currentCam;		
+	Camera* m_currentCam;
 	InputController* m_input;
 	CollisionManager* m_collisionManager;
+
+	ThirdPersonCamera* m_thirdPersonCam;
+	FirstPersonCamera* m_firstPersonCam;
+	SurveillanceCamera* m_surveilanceCam;
+	int m_cameraToggle;	// This value represents the camera currently in use
+	int m_cameraRotationTime;
 
 	std::vector<GameObject*> m_gameObjects;
 	std::vector<Kart*> m_karts;
@@ -69,6 +78,10 @@ private:
 	boolean m_gameOver;
 	boolean m_newGame;
 	boolean m_playerWin;
+
+	// Headlight variables
+	Vector3 m_headlightPosition;
+	Vector3 m_headlightOrientation;
 
 	// Items
 	std::vector<MovingItemObject*> m_movingItemObjects;

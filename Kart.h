@@ -23,6 +23,9 @@ class Kart : public PhysicsObject
 private:
 	InputController* m_input;
 protected:
+	const int WORLD_WIDTH = 299;	// For GetRandomPosition()
+	const int WORLD_DEPTH = 299;	// For GetRandomPosition()
+
 	float m_moveSpeed;
 	float m_turnSpeed;
 
@@ -34,6 +37,10 @@ protected:
 
 	int m_itemValue;	// The value of the item currently held
 	//int m_itemReleased;
+
+	boolean m_collision;	// Use this to tell the camera to shake
+	Vector3 m_targetPosition;	// This is for the autodrive and EnemeyKart
+	boolean m_gameOver;	// use this for the gameover screen
 
 	int m_gameObjectIndex;
 
@@ -71,7 +78,16 @@ public:
 
 	Vector3 GetLocalForward();
 
+	Vector3 GetHeadlightPos();
+	Vector3 GetHeadlightDir();
+
+	void AutoDrive(float timestep);
+	Vector3 GetRandomPosition();	// This is for the EnemyKart and AutoDrive()
+
 	void SetItemValue(int item) { m_itemValue = item; }
+	void SetCollisionStatus(boolean collisionIn) { m_collision = collisionIn; }
+	void SetGameOver(boolean gameOver) { m_gameOver = gameOver; }
+
 	int GetItemValue() { return m_itemValue; }
 
 	// Gives Kart all the relevant pointers for construction an item
@@ -95,6 +111,7 @@ public:
 	void SetItemBoxes(std::vector<ItemBox*>* itemBoxes) { m_itemBoxes = itemBoxes; }
 	int GetGameObjectIndex() { return m_gameObjectIndex; }
 	boolean GetInvincibility() { return m_invincible; }
+	boolean GetCollisionStatus() { return m_collision; }
 
 	// Kart executes this when an object is fired
 	// Constructs the item object and then adds it to the item lists

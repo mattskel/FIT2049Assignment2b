@@ -46,20 +46,20 @@ void EnemyKart::Update(float timestep) {
 		m_targetPosition = m_playerKart->GetPosition();
 	}
 
+	// Checks how long EnemyKart has been chasing a target
+	// If exceeds the predefined time, generate a new target
+	// This is to prevent Karts getting stuck in circles
+	if (time(NULL) - m_startNewTarget > 10 && !m_chasingPlayer) {
+		m_targetPosition = GetRandomPosition();
+		m_startNewTarget = time(NULL);
+	}
 	// Once the kart is close enough to the target position, a new position is generated
-	if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 5.0f) {
+	else if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 3.0f) {
 		if (!m_chasingPlayer) {
 			m_targetPosition = GetRandomPosition();
 			m_startNewTarget = time(NULL);	
 		}
 		m_targetIsItemBox = false;
-	}
-	// Checks how long EnemyKart has been chasing a target
-	// If exceeds the predefined time, generate a new target
-	// This is to prevent Karts getting stuck in circles
-	else if (time(NULL) - m_startNewTarget > 20 && !m_chasingPlayer) {
-		m_targetPosition = GetRandomPosition();
-		m_startNewTarget = time(NULL);
 	}
 	else {
 		// First check if there are any item boxes near by
@@ -92,7 +92,7 @@ void EnemyKart::Update(float timestep) {
 			m_targetIsItemBox = true;
 		}
 
-		Vector3 worldForward = Vector3(0, 0, 1);
+		/*Vector3 worldForward = Vector3(0, 0, 1);
 		Matrix heading = Matrix::CreateRotationY(m_rotY);
 		Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
 
@@ -117,7 +117,9 @@ void EnemyKart::Update(float timestep) {
 		}
 
 		// Apply the force in the forward direction
-		ApplyForce(localForward * m_moveSpeed * timestep);
+		ApplyForce(localForward * m_moveSpeed * timestep);*/
+
+		AutoDrive(timestep);
 	}
 
 	// Check if the EnemyKart has invincibility
@@ -135,14 +137,14 @@ void EnemyKart::Update(float timestep) {
 	PhysicsObject::Update(timestep);
 
 	// If all lives are gone set the status to 0
-	if (m_livesRemaining == 0) {
+	if (m_livesRemaining == 0 && !m_gameOver) {
 		m_status = 0;
 	}
 }
 
 // Generates a random position in the playing area
-Vector3 EnemyKart::GetRandomPosition() {
+/*Vector3 EnemyKart::GetRandomPosition() {
 
 	return Vector3(MathsHelper::RandomRange(-WORLD_WIDTH, WORLD_WIDTH),0,
 		MathsHelper::RandomRange(-WORLD_DEPTH, WORLD_DEPTH));
-}
+}*/

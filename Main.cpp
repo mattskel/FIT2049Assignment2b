@@ -26,6 +26,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	Window* win = new Window("FIT2049 Week 9: Particle Systems", 1280, 720, false);	//We'll create our window object, set a size and if we want it fullscreen
 
+	
 	if(win->Initialise())	//If the window initialises...
 	{
 		win->Start();		//...then we start the message pump running!

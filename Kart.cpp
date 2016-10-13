@@ -4,6 +4,7 @@
 #include "GreenShell.h"
 #include "Banana.h"
 #include "ItemBox.h"
+#include "MathsHelper.h"
 
 #include <iostream>
 
@@ -30,6 +31,10 @@ Kart::Kart(Mesh* mesh,
 
 	m_invincible = false;
 	m_invincibleStart = 0;
+	m_collision = false;
+	m_gameOver = false;
+
+	m_targetPosition = GetRandomPosition();
 }
 
 // Initialise the balloon list
@@ -52,25 +57,35 @@ void Kart::InitBalloons() {
 
 void Kart::Update(float timestep) {
 
-	Vector3 worldForward = Vector3(0, 0, 1);
+	if (!m_gameOver) {
+		Vector3 worldForward = Vector3(0, 0, 1);
 
-	Matrix heading = Matrix::CreateRotationY(m_rotY);
-	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
+		Matrix heading = Matrix::CreateRotationY(m_rotY);
+		Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
 
-	if (m_input->GetKeyHold('A')) {
-		m_rotY -= m_turnSpeed * timestep;
-	}
+		if (m_input->GetKeyHold('A')) {
+			m_rotY -= m_turnSpeed * timestep;
+		}
 
-	if (m_input->GetKeyHold('D'))
-		m_rotY += m_turnSpeed * timestep;
+		if (m_input->GetKeyHold('D'))
+			m_rotY += m_turnSpeed * timestep;
 
-	if (m_input->GetKeyHold('W'))
-		ApplyForce(localForward * m_moveSpeed * timestep);
+		if (m_input->GetKeyHold('W'))
+			ApplyForce(localForward * m_moveSpeed * timestep);
 
-	if (m_input->GetKeyUp(VK_SPACE)) {
-		//m_itemReleased = m_itemValue;
-		ItemReleased();
-		m_itemValue = -1;
+		if (m_input->GetKeyUp(VK_SPACE)) {
+			//m_itemReleased = m_itemValue;
+			ItemReleased();
+			m_itemValue = -1;
+		}
+	} 
+	// We want to the player kart to keep driving when we are in the game over screen
+	// When we are in the game over screen, set the driving to AutoDrive
+	else {
+		if (Vector3::DistanceSquared(GetPosition(), m_targetPosition) <= 20.0f) {
+			m_targetPosition = GetRandomPosition();
+		}
+		AutoDrive(timestep);
 	}
 
 	// Draw Balloons
@@ -104,7 +119,7 @@ void Kart::Update(float timestep) {
 
 	PhysicsObject::Update(timestep);
 
-	if (m_livesRemaining == 0) {
+	if (m_livesRemaining == 0 && !m_gameOver) {
 		m_status = 0;
 	}
 }
@@ -117,6 +132,50 @@ Vector3 Kart::GetLocalForward() {
 	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
 
 	return localForward;
+}
+
+Vector3 Kart::GetHeadlightPos() {
+	return GetPosition() + Vector3(0, 0, -5);
+}
+Vector3 Kart::GetHeadlightDir() {
+	Vector3 headlightForward = Vector3(0, -1, -1);
+	Matrix heading = Matrix::CreateRotationY(m_rotY);
+	return Vector3::TransformNormal(headlightForward, heading);
+}
+
+void Kart::AutoDrive(float timestep) {
+	Vector3 worldForward = Vector3(0, 0, 1);
+	Matrix heading = Matrix::CreateRotationY(m_rotY);
+	Vector3 localForward = Vector3::TransformNormal(worldForward, heading);
+
+	// A vector from current position to target position
+	Vector3 targetVector = m_targetPosition - GetPosition();
+	// Normalise the vector
+	// Get the vector length
+	float vectorLength = targetVector.Length();
+	Vector3 normalTargetVector = Vector3(targetVector.x / vectorLength,
+		targetVector.y / vectorLength,
+		targetVector.z / vectorLength);
+
+	// Use the cross product to determine what direction to turn
+	float crossProduct = localForward.x * normalTargetVector.z - localForward.z*normalTargetVector.x;
+
+	// Use the sign of the cross product to turn left or right
+	if (crossProduct > 0.1f) {
+		m_rotY -= m_turnSpeed * timestep;
+	}
+	else if (crossProduct < -0.1f) {
+		m_rotY += m_turnSpeed * timestep;
+	}
+
+	// Apply the force in the forward direction
+	ApplyForce(localForward * m_moveSpeed * timestep);
+}
+
+Vector3 Kart::GetRandomPosition() {
+
+	return Vector3(MathsHelper::RandomRange(-WORLD_WIDTH, WORLD_WIDTH), 0,
+		MathsHelper::RandomRange(-WORLD_DEPTH, WORLD_DEPTH));
 }
 
 void Kart::SetItemPointers(std::vector<const char*>* itemTextures,
@@ -218,6 +277,7 @@ void Kart::LifeLost() {
 void Kart::OnKartCollisionEnter(Kart* other) {
 
 	if (!m_invincible) {
+		m_collision = true;
 		Vector3 v1 = GetLocalForward();
 		Vector3 v2 = other->GetLocalForward();
 
@@ -268,7 +328,7 @@ void Kart::OnItemCollisionExit(ItemBox* other) {
 // When colliding with a wall the kart rebounds at the same angle
 void Kart::OnWallCollisionEnter(Wall* other) {
 	OutputDebugString("OnWallCollisionEnter\n");
-
+	m_collision = true;
 	Vector3 localForward = GetLocalForward();
 	Vector3 acceleration = GetAcceleration();
 	// Only using velocity at the moment
@@ -292,6 +352,7 @@ void Kart::OnWallCollisionExit(Wall* other) {
 // The kart rebounds based on the direction of the shell
 void Kart::OnShellCollisionEnter(Shell* other) {
 	if (!m_invincible) {
+		m_collision = true;
 		Vector3 localNormal = GetPosition() - other->GetPosition();
 		Matrix heading = Matrix::CreateRotationY(m_rotY);
 
@@ -318,6 +379,7 @@ void Kart::OnShellCollisionEnter(Shell* other) {
 // Rebound off the item in the reverse direction
 void Kart::OnOtherItemCollisionEnter() {
 	if (!m_invincible) {
+		m_collision = true;
 		Vector3 velocity = GetVelocity();
 		ApplyForce(-2.0 * velocity);
 

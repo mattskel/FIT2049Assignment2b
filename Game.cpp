@@ -11,9 +11,11 @@
 #include "StaticObject.h"
 #include "FlyingCamera.h"
 #include "ThirdPersonCamera.h"
+#include "FirstPersonCamera.h"
 #include "SurveillanceCamera.h"
 #include "MathsHelper.h"
 
+#include <time.h>
 #include <iostream>
 
 Game::Game()
@@ -43,16 +45,24 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 
 	//m_currentCam = new FlyingCamera(m_input, Vector3(0, 20, -40));
 	//m_currentCam = new ThirdPersonCamera(m_playerKart, Vector3(0, 7, -20));
-	m_currentCam = new ThirdPersonCamera();
+	m_thirdPersonCam = new ThirdPersonCamera();
+	m_firstPersonCam = new FirstPersonCamera();
+	m_surveilanceCam = new SurveillanceCamera();
+	m_currentCam = new FirstPersonCamera();
+	m_cameraToggle = 0;
 
 	InitMaterials();
 	InitLights();
+
+	
 
 	if (!InitShaders())
 		return false;
 
 	if (!LoadTextures())
 		return false;
+
+	OutputDebugString("#HERE");
 
 	if (!LoadMeshes())
 		return false;
@@ -104,7 +114,11 @@ void Game::InitGameWorld()
 
 	// Now we have created the kart we can set follow target for our camera
 	//m_currentCam->SetFollowTarget(m_playerKart, Vector3(0, 7, -20));
-	static_cast<ThirdPersonCamera*>(m_currentCam)->SetFollowTarget(m_playerKart, Vector3(0, 7, -20));
+	static_cast<ThirdPersonCamera*>(m_thirdPersonCam)->SetFollowTarget(m_playerKart, Vector3(0, 7, -20));
+	static_cast<FirstPersonCamera*>(m_firstPersonCam)->SetFollowTarget(m_playerKart, Vector3(0, 3, 10));
+	m_surveilanceCam->SetTarget(m_playerKart, 1.0f);
+	//m_currentCam = m_thirdPersonCam;
+	m_currentCam = m_thirdPersonCam;
 
 	// Create item boxes
 	for (int i = 0; i < 4; i++) {
@@ -171,6 +185,12 @@ void Game::InitGameWorld()
 	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 10, 300)));
 	westWall->SetFace(Vector3(-1, 0, 0));
 	m_walls.push_back(westWall);
+
+	// Add the headlights for the cars
+	m_headlightPosition = m_playerKart->GetHeadlightPos();
+	m_headlightOrientation = m_playerKart->GetHeadlightDir();
+	m_lightingController->AddSpotLight(m_headlightPosition, m_headlightOrientation, Color(1.0f, 1.0f, 1.0f), 5.0f, 1.0f, 0.02f, 0.0005f);
+
 
 }
 
@@ -242,13 +262,16 @@ void Game::InitMaterials()
 void Game::InitLights()
 {
 	// Setup the lighting in our world
-	//m_lightingController = new SceneLighting(Color(0.1f, 0.1f, 0.2f, 1.0f));
-	m_lightingController = new SceneLighting(Color(0.7f, 0.7f, 0.7f, 1.0f));
+	m_lightingController = new SceneLighting(Color(0.1f, 0.1f, 0.2f, 1.0f));
+	//m_lightingController = new SceneLighting(Color(0.7f, 0.7f, 0.7f, 1.0f));
 
-	m_lightingController->AddDirectionalLight(Vector3(0.5f, -0.5f, 0.5f), Color(1.0f, 1.0f, 1.0f));
+	//m_lightingController->AddDirectionalLight(Vector3(0.5f, -0.5f, 0.5f), Color(1.0f, 1.0f, 1.0f));
 
 	//m_lightingController->AddPointLight(Vector3(70, 10, -30), Color(1.0f, 1.0f, 1.0f), 1.0f, 0.02f, 0.0005f);
 	//m_lightingController->AddDirectionalLight(Vector3(0, 10, 0), Color(1.0f, 1.0f, 1.0f, 1.0f));
+
+	//m_lightingController->AddSpotLight(m_playerKart->GetPosition(), m_playerKart->GetLocalForward(), Color(1.0f, 1.0f, 1.0f),5.0f, 1.0f, 0.02f, 0.0005f);
+	m_lightingController->AddSpotLight(Vector3(70, 10, -25), Vector3(0, 0, -1), Color(1.0f, 1.0f, 1.0f), 5.0f, 1.0f, 0.02f, 0.0005f);
 
 }
 
@@ -364,6 +387,8 @@ bool Game::InitShaders()
 
 bool Game::LoadTextures()
 {
+
+
 	if (!Texture::LoadFromFile(L"Assets/Textures/Button.png", "ButtonWhite", m_renderer))
 		return false;
 
@@ -593,6 +618,25 @@ void Game::Gameplay_OnUpdate(float timestep)
 		m_stateMachine->ChangeState(GameStates::PAUSE_STATE);
 	}
 
+	// Check for toggle
+	if (m_input->GetKeyDown('L')) {
+		// TODO
+		m_cameraToggle = (m_cameraToggle += 1) % 3;
+
+		switch (m_cameraToggle) {
+		case 0:
+			m_currentCam = m_thirdPersonCam;
+			break;
+		case 1:
+			m_currentCam = m_firstPersonCam;
+			break;
+		case 2:
+			m_currentCam = m_surveilanceCam;
+		default:
+			break;
+		}
+	}
+
 	m_collisionManager->CheckCollisions();
 
 	// Finds all the items that need to be removed from m_gameObjects
@@ -639,6 +683,7 @@ void Game::Gameplay_OnUpdate(float timestep)
 	}
 
 	m_currentCam->Update(timestep);
+	m_thirdPersonCam->Update(timestep);	// Need to update this all the time for the lerp
 
 	// checks if the player kart is still alive, or
 	// checks if there is more than one player left
@@ -684,6 +729,7 @@ void Game::Gameplay_OnRender()
 void Game::Gameplay_OnExit()
 {
 	OutputDebugString("GamePlay OnExit\n");
+	m_cameraRotationTime = time(NULL);
 }
 
 void Game::Menu_OnEnter() {
@@ -719,9 +765,40 @@ void Game::Pause_OnExit() {
 	OutputDebugString("Pause OnExit\n");
 }
 
-void Game::GameOver_OnEnter() {}
+void Game::GameOver_OnEnter() {
+	// Let all the Karts know that we are now in game over
+	// Also set the cameras to the first kart in the list
+	int index = 0;
+	for (Kart* kart : m_karts) {
+		kart->SetGameOver(true);
+		if (kart->GetStatus() != 0) {
+			m_thirdPersonCam->SetFollowTarget(kart, Vector3(0, 7, -20));
+			m_firstPersonCam->SetFollowTarget(kart, Vector3(0, 3, 10));
+			m_surveilanceCam->SetTarget(kart, 1.0f);
+		}
+	}
+}
 
-void Game::GameOver_OnUpdate(float timestep) {}
+void Game::GameOver_OnUpdate(float timestep) {
+	Gameplay_OnUpdate(timestep);
+	if (time(NULL) - m_cameraRotationTime > 4) {
+		OutputDebugString("#HERE");
+		m_cameraToggle = (m_cameraToggle += 1) % 3;
+		m_cameraRotationTime = time(NULL);
+		switch (m_cameraToggle) {
+		case 0:
+			m_currentCam = m_thirdPersonCam;
+			break;
+		case 1:
+			m_currentCam = m_firstPersonCam;
+			break;
+		case 2:
+			m_currentCam = m_surveilanceCam;
+		default:
+			break;
+		}
+	}
+}
 
 void Game::GameOver_OnRender(){
 	Gameplay_OnRender();
