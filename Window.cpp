@@ -150,7 +150,7 @@ void Window::Start()
 	float timeBank = 0.0f;
 
 	// Our desired timestep - 60 frames a second.
-	const float timeStep = 1.0f / 40.0f;
+	const float timeStep = 1.0f / 30.0f;
 
 	bool running = true;	
 

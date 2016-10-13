@@ -41,6 +41,7 @@ protected:
 	boolean m_collision;	// Use this to tell the camera to shake
 	Vector3 m_targetPosition;	// This is for the autodrive and EnemeyKart
 	boolean m_gameOver;	// use this for the gameover screen
+	boolean m_lights;	// boolean to decide if we want the lights on
 
 	int m_gameObjectIndex;
 
@@ -53,6 +54,8 @@ protected:
 	Shader* m_texturedShader;
 
 	ItemBox* m_previousItemBox;		// To make sure we don't return to the previous ItemBox, for enemies
+
+	Light* m_headlight;
 
 	// Kart needs to store the items it creates somewhere
 	std::vector<GameObject*>* m_gameObjects;
@@ -87,6 +90,11 @@ public:
 	void SetItemValue(int item) { m_itemValue = item; }
 	void SetCollisionStatus(boolean collisionIn) { m_collision = collisionIn; }
 	void SetGameOver(boolean gameOver) { m_gameOver = gameOver; }
+
+	// Lighting
+	void SetHeadlight(Light* headlight) { m_headlight = headlight; }
+	void SetLights(boolean lights) { m_lights = lights; }
+	void UpdateHeadlights();
 
 	int GetItemValue() { return m_itemValue; }
 

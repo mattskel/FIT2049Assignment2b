@@ -33,6 +33,7 @@ Kart::Kart(Mesh* mesh,
 	m_invincibleStart = 0;
 	m_collision = false;
 	m_gameOver = false;
+	m_lights = false;
 
 	m_targetPosition = GetRandomPosition();
 }
@@ -113,6 +114,15 @@ void Kart::Update(float timestep) {
 		}
 	}
 
+	// Update headlights
+	if (m_lights)
+		UpdateHeadlights();
+	/*Vector3 worldHeadlights = Vector3(0, -1, 5);
+	Matrix headingHeadlight = Matrix::CreateRotationY(m_rotY);
+	Vector3 localHeadlights = Vector3::TransformNormal(worldHeadlights, headingHeadlight);
+	m_headlight->SetPosition(GetPosition() +  + Vector3(0.0f,2.0f,0.0f) + 4.0f * GetLocalForward());
+	m_headlight->SetDirection(localHeadlights);*/
+
 	// Move collider
 	m_boundingBox.SetMin(GetPosition() + m_mesh->GetMin());
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());
@@ -122,6 +132,14 @@ void Kart::Update(float timestep) {
 	if (m_livesRemaining == 0 && !m_gameOver) {
 		m_status = 0;
 	}
+}
+
+void Kart::UpdateHeadlights() {
+	Vector3 worldHeadlights = Vector3(0, -1, 5);
+	Matrix headingHeadlight = Matrix::CreateRotationY(m_rotY);
+	Vector3 localHeadlights = Vector3::TransformNormal(worldHeadlights, headingHeadlight);
+	m_headlight->SetPosition(GetPosition() + +Vector3(0.0f, 2.0f, 0.0f) + 4.0f * GetLocalForward());
+	m_headlight->SetDirection(localHeadlights);
 }
 
 // Returns the local forard of the kart
@@ -134,14 +152,15 @@ Vector3 Kart::GetLocalForward() {
 	return localForward;
 }
 
-Vector3 Kart::GetHeadlightPos() {
+// Not using these
+/*Vector3 Kart::GetHeadlightPos() {
 	return GetPosition() + Vector3(0, 0, -5);
 }
 Vector3 Kart::GetHeadlightDir() {
 	Vector3 headlightForward = Vector3(0, -1, -1);
 	Matrix heading = Matrix::CreateRotationY(m_rotY);
 	return Vector3::TransformNormal(headlightForward, heading);
-}
+}*/
 
 void Kart::AutoDrive(float timestep) {
 	Vector3 worldForward = Vector3(0, 0, 1);
@@ -269,6 +288,9 @@ void Kart::LifeLost() {
 		Balloon* balloon = m_balloons[m_livesRemaining - 1];
 		balloon->SetLifeLost();
 		m_livesRemaining -= 1;
+		if (m_livesRemaining == 0 && !m_gameOver) {
+			m_headlight->Disable();
+		}
 	}
 }
 

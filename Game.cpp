@@ -39,7 +39,7 @@ Game::~Game() {}
 bool Game::Initialise(Direct3D* renderer, InputController* input)
 {
 	m_gameOver = false;
-
+	m_night = false;
 	m_renderer = renderer;	
 	m_input = input;
 
@@ -53,8 +53,6 @@ bool Game::Initialise(Direct3D* renderer, InputController* input)
 
 	InitMaterials();
 	InitLights();
-
-	
 
 	if (!InitShaders())
 		return false;
@@ -111,6 +109,14 @@ void Game::InitGameWorld()
 	kart->SetGameObjectIndex(m_gameObjects.size());
 	m_gameObjects.push_back(kart);
 	m_karts.push_back(kart);
+	// Add the headlights to the player kart
+	if (m_night) {
+		kart->SetLights(true);
+		kart->SetHeadlight(m_lightingController->AddSpotLight(m_playerKart->GetPosition(),
+																		Vector3(0.0f, -1.0f, 1.0f),
+																		Color(1.0f, 1.0f, 1.0f),
+																		20.0f, 0.2f, 0.01f, 0.0f));
+	}
 
 	// Now we have created the kart we can set follow target for our camera
 	//m_currentCam->SetFollowTarget(m_playerKart, Vector3(0, 7, -20));
@@ -153,6 +159,13 @@ void Game::InitGameWorld()
 		enemy->SetGameObjectIndex(m_gameObjects.size());
 		m_gameObjects.push_back(enemy);
 		m_karts.push_back(enemy);
+		if (m_night) {
+			enemy->SetLights(true);
+			enemy->SetHeadlight(m_lightingController->AddSpotLight(enemy->GetPosition(),
+																	Vector3(0.0f, -1.0f, 1.0f),
+																	Color(1.0f, 1.0f, 1.0f),
+																	20.0f, 0.2f, 0.01f, 0.0f));
+		}
 	}
 
 	int playerItemIndex = m_playerKart->GetItemValue();
@@ -185,12 +198,6 @@ void Game::InitGameWorld()
 	westWall->SetBounds(CBoundingBox(Vector3(300, 0, -300), Vector3(320, 10, 300)));
 	westWall->SetFace(Vector3(-1, 0, 0));
 	m_walls.push_back(westWall);
-
-	// Add the headlights for the cars
-	m_headlightPosition = m_playerKart->GetHeadlightPos();
-	m_headlightOrientation = m_playerKart->GetHeadlightDir();
-	m_lightingController->AddSpotLight(m_headlightPosition, m_headlightOrientation, Color(1.0f, 1.0f, 1.0f), 5.0f, 1.0f, 0.02f, 0.0005f);
-
 
 }
 
@@ -262,17 +269,17 @@ void Game::InitMaterials()
 void Game::InitLights()
 {
 	// Setup the lighting in our world
-	m_lightingController = new SceneLighting(Color(0.1f, 0.1f, 0.2f, 1.0f));
-	//m_lightingController = new SceneLighting(Color(0.7f, 0.7f, 0.7f, 1.0f));
+	if (m_night) {
+		m_lightingController = new SceneLighting(Color(0.1f, 0.1f, 0.2f, 1.0f));
+	}
+	else {
+		m_lightingController = new SceneLighting(Color(0.7f, 0.7f, 0.7f, 1.0f));
+		m_lightingController->AddDirectionalLight(Vector3(0.5f, -0.5f, 0.5f), Color(1.0f, 1.0f, 1.0f));
+	}
 
-	//m_lightingController->AddDirectionalLight(Vector3(0.5f, -0.5f, 0.5f), Color(1.0f, 1.0f, 1.0f));
-
+	
 	//m_lightingController->AddPointLight(Vector3(70, 10, -30), Color(1.0f, 1.0f, 1.0f), 1.0f, 0.02f, 0.0005f);
 	//m_lightingController->AddDirectionalLight(Vector3(0, 10, 0), Color(1.0f, 1.0f, 1.0f, 1.0f));
-
-	//m_lightingController->AddSpotLight(m_playerKart->GetPosition(), m_playerKart->GetLocalForward(), Color(1.0f, 1.0f, 1.0f),5.0f, 1.0f, 0.02f, 0.0005f);
-	m_lightingController->AddSpotLight(Vector3(70, 10, -25), Vector3(0, 0, -1), Color(1.0f, 1.0f, 1.0f), 5.0f, 1.0f, 0.02f, 0.0005f);
-
 }
 
 bool Game::InitParticleSystems()

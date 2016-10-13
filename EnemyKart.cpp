@@ -130,6 +130,10 @@ void EnemyKart::Update(float timestep) {
 		}
 	}
 
+	// Update Headlights
+	if (m_lights)
+		UpdateHeadlights();
+
 	// Move collider
 	m_boundingBox.SetMin(GetPosition() + m_mesh->GetMin());
 	m_boundingBox.SetMax(GetPosition() + m_mesh->GetMax());

@@ -78,6 +78,7 @@ private:
 	boolean m_gameOver;
 	boolean m_newGame;
 	boolean m_playerWin;
+	boolean m_night;
 
 	// Headlight variables
 	Vector3 m_headlightPosition;
